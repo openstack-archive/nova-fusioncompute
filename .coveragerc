@@ -1,0 +1,6 @@
+[run]
+branch = True
+source = nova-fusioncompute
+
+[report]
+ignore_errors = True
