@@ -1,0 +1,8 @@
+Code-Review+2: Dong Zhi <517341003@qq.com>
+Workflow+1: Dong Zhi <517341003@qq.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Fri, 21 Oct 2016 05:20:03 +0000
+Reviewed-on: https://review.openstack.org/388831
+Project: openstack/nova-fusioncompute
+Branch: refs/heads/master
