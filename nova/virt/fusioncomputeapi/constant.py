@@ -321,8 +321,8 @@ FC_REBOOT_TYPE = {
     REBOOT_TYPE.SOFT: 'safe'
 }
 
-HUAWEI_OS_TYPE = '__os_type'
-HUAWEI_OS_VERSION = '__os_version'
+HUAWEI_OS_TYPE = 'os_type'
+HUAWEI_OS_VERSION = 'os_distro'
 HUAWEI_IMAGE_LOCATION = '__image_location'
 HUAWEI_IMAGE_TYPE = '__image_source_type'
 HUAWEI_IS_LINK_CLONE = '__linked_clone'

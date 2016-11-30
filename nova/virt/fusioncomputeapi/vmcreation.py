@@ -589,14 +589,20 @@ class VmCreateWithImage(VmCreateByImport):
     def get_os_options(self):
         """get vm os info"""
 
-        # get os Type from mata
-        # os_type = self.image_properties.get(constant.HUAWEI_OS_TYPE)
-        # os_version = self.image_properties.
-        # get(constant.HUAWEI_OS_VERSION)
-        # if os_type:
-        #    return self.get_fc_os_options(os_type, os_version)
-        # else:
-        return super(VmCreateWithImage, self).get_os_options()
+        if self.image_properties.obj_attr_is_set(constant.HUAWEI_OS_TYPE):
+            os_type = self.image_properties.get(constant.HUAWEI_OS_TYPE)
+        else:
+            os_type = "other"
+
+        if self.image_properties.obj_attr_is_set(constant.HUAWEI_OS_VERSION):
+            os_version = self.image_properties.get(constant.HUAWEI_OS_VERSION)
+        else:
+            os_version = "other"
+
+        if os_type:
+            return self.get_fc_os_options(os_type, os_version)
+        else:
+            return super(VmCreateWithImage, self).get_os_options()
 
     def _get_image_size(self):
         """get image size info"""
