@@ -1,0 +1,9 @@
+Code-Review+1: Huawei FusionCompute CI <zhidong@huawei.com>
+Code-Review+2: Dong Zhi <517341003@qq.com>
+Workflow+1: Dong Zhi <517341003@qq.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Wed, 30 Nov 2016 04:20:29 +0000
+Reviewed-on: https://review.openstack.org/404523
+Project: openstack/nova-fusioncompute
+Branch: refs/heads/master
