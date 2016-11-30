@@ -1,34 +1,24 @@
-# Copyright 2016 Huawei Technologies Co.,LTD.
-# All Rights Reserved.
-#
-#    Licensed under the Apache License, Version 2.0 (the "License"); you may
-#    not use this file except in compliance with the License. You may obtain
-#    a copy of the License at
-#
-#         http://www.apache.org/licenses/LICENSE-2.0
-#
-#    Unless required by applicable law or agreed to in writing, software
-#    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
-#    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-#    License for the specific language governing permissions and limitations
-#    under the License.
+"""
+    FusionCompute create vm
+"""
 
 import re
 
-from nova.i18n import _
+from nova import exception
 from oslo_serialization import jsonutils
+from nova.i18n import _
 
+from nova.virt.fusioncomputeapi import ops_task_base
 from nova.virt.fusioncomputeapi import constant
 from nova.virt.fusioncomputeapi import exception as fc_exc
-from nova.virt.fusioncomputeapi.fcinstance import FC_INSTANCE_MANAGER as FC_MGR
-from nova.virt.fusioncomputeapi import ops_task_base
 from nova.virt.fusioncomputeapi import utils
 from nova.virt.fusioncomputeapi.utils import LOG
+from nova.virt.fusioncomputeapi.fcinstance import FC_INSTANCE_MANAGER as FC_MGR
 
+#from FSSecurity import crypt
 
 class VmCreateBase(ops_task_base.OpsTaskBase):
     """vm controller class"""
-
     def __init__(self, fc_client, task_ops, instance):
         super(VmCreateBase, self).__init__(fc_client, task_ops)
         self._instance = instance
@@ -49,20 +39,9 @@ class VmCreateBase(ops_task_base.OpsTaskBase):
         self._customization = {}
         self._is_support_virtual_io = False
 
-    def __call__(
-            self,
-            context,
-            volume_ops,
-            location,
-            vifs,
-            block_device_info,
-            image_meta,
-            injected_files,
-            admin_password,
-            extra_specs,
-            customization,
-            resource_group_urn,
-            compute_ops):
+    def __call__(self, context, volume_ops, location,
+                 vifs, block_device_info, image_meta,
+                 injected_files, admin_password, extra_specs, customization, resource_group_urn, compute_ops):
         self._volume_ops = volume_ops
         self._compute_ops = compute_ops
         self._location = location
@@ -79,8 +58,8 @@ class VmCreateBase(ops_task_base.OpsTaskBase):
 
     @property
     def image_properties(self):
-        """image mate properties
-
+        """
+        image mate properties
         :return:
         """
         if self._image_meta:
@@ -89,8 +68,8 @@ class VmCreateBase(ops_task_base.OpsTaskBase):
             return {}
 
     def check_input(self):
-        """check function input params
-
+        """
+        check function input params
         :return:
         """
         os_option = self.get_os_options()
@@ -100,8 +79,8 @@ class VmCreateBase(ops_task_base.OpsTaskBase):
             raise fc_exc.InvalidOsOption()
 
     def get_body_ext(self):
-        """if body not enough, child class can extend
-
+        """
+        if body not enough, child class can extend
         :return:
         """
         raise NotImplementedError()
@@ -126,15 +105,15 @@ class VmCreateBase(ops_task_base.OpsTaskBase):
         self.get_body_ext()
 
     def extend_ops_before_start(self):
-        """vm is created in stopped state, do something before start
-
+        """
+        vm is created in stopped state, do something before start
         :return:
         """
         pass
 
     def create_and_boot_vm(self):
-        """create vm interface func
-
+        """
+        create vm interface func
         :return:
         """
         self.check_input()
@@ -146,7 +125,7 @@ class VmCreateBase(ops_task_base.OpsTaskBase):
         if not self.is_auto_boot():
             self.inject_files()
 
-            # Other opeation when vm stoped
+            #Other opeation when vm stoped
             self.extend_ops_before_start()
             self._compute_ops.start_vm(self._instance, self._block_device_info)
 
@@ -162,7 +141,7 @@ class VmCreateBase(ops_task_base.OpsTaskBase):
         numa_nodes = self._extra_specs.get('hw:numa_nodes', None)
         if numa_nodes is not None:
             LOG.debug(_('numa_nodes %s'), numa_nodes)
-            _core_per_socket = int(self._instance['vcpus']) / int(numa_nodes)
+            _core_per_socket = int(self._instance['vcpus'])/int(numa_nodes)
             cpu_info['coresPerSocket'] = _core_per_socket
             LOG.debug(_('_core_per_socket %d'), _core_per_socket)
 
@@ -193,8 +172,8 @@ class VmCreateBase(ops_task_base.OpsTaskBase):
         ]
 
     def get_fc_os_options(self, os_type, os_version):
-        """get fc options
-
+        """
+        get fc options
         :param os_type:
         :param os_version:
         :return:
@@ -205,24 +184,23 @@ class VmCreateBase(ops_task_base.OpsTaskBase):
             os_version = ''
 
         fc_os_type = constant.HUAWEI_OS_TYPE_MAP.\
-            get(os_type.lower(), constant.DEFAULT_HUAWEI_OS_TYPE)
+            get(os_type.lower(),constant.DEFAULT_HUAWEI_OS_TYPE)
 
-        # 201=Other_Windows(32_bit),301=Other_Linux(32_bit),401=Other(32_bit)
-        # using hard code for default os_version value.
-        # if huawei-os-config.conf has been changed,
-        # those code should be modified also.
+        #201=Other_Windows(32_bit), 301=Other_Linux(32_bit), 401=Other(32_bit)
+        #using hard code for default os_version value. if huawei-os-config.conf
+        #has been changed, those code should be modified also.
         if fc_os_type == 'Windows':
             fc_os_version = \
                 constant.HUAWEI_OS_VERSION_INT[fc_os_type].\
-                get(os_version.lower(), 201)
+                    get(os_version.lower(), 201)
         elif fc_os_type == 'Linux':
             fc_os_version = \
                 constant.HUAWEI_OS_VERSION_INT[fc_os_type].\
-                get(os_version.lower(), 301)
+                    get(os_version.lower(), 301)
         else:
             fc_os_version = \
                 constant.HUAWEI_OS_VERSION_INT[fc_os_type].\
-                get(os_version.lower(), 401)
+                    get(os_version.lower(), 401)
 
         if fc_os_version in constant.VIRTUAL_IO_OS_LIST:
             self._is_support_virtual_io = True
@@ -233,8 +211,8 @@ class VmCreateBase(ops_task_base.OpsTaskBase):
         }
 
     def get_os_options(self):
-        """get vm os info
-
+        """
+        get vm os info
         get os Type from mata
         :return:
         """
@@ -245,10 +223,9 @@ class VmCreateBase(ops_task_base.OpsTaskBase):
     def get_properties(self):
         """get vm property"""
         vm_properties = {
-            'bootOption': utils.get_boot_option_from_metadata(
-                self._metadata),
-            'vmVncKeymapSetting': utils.get_vnc_key_map_setting_from_metadata(
-                self._metadata)}
+            'bootOption': utils.get_boot_option_from_metadata(self._metadata),
+            'vmVncKeymapSetting': utils.get_vnc_key_map_setting_from_metadata(self._metadata)
+        }
         hpet_support = self._extra_specs.get('extra_spec:bios:hpet')
         if hpet_support is not None:
             LOG.debug(_('hpet_support %s'), hpet_support)
@@ -272,12 +249,11 @@ class VmCreateBase(ops_task_base.OpsTaskBase):
             if gpu_specs:
                 gpu_specs = gpu_specs.split(':')
                 if gpu_specs is None or len(gpu_specs) != 3:
-                    reason = 'Invalid flavor extra spec info: ' \
-                             'gpu_specs is %s' % gpu_specs
+                    reason = 'Invalid flavor extra spec info: gpu_specs is %s' % gpu_specs
                     LOG.error(reason)
                     raise fc_exc.InvalidFlavorExtraSpecInfo(reason=reason)
                 else:
-                    # gpu_alias = gpu_specs[0]  # reserve property
+                    gpu_alias = gpu_specs[0]  # reserve property
                     gpu_mode = gpu_specs[1]
                     gpu_number = gpu_specs[2]
                     for i in range(int(gpu_number)):
@@ -286,13 +262,12 @@ class VmCreateBase(ops_task_base.OpsTaskBase):
             elif gpu_number and int(gpu_number) > 0:
                 for i in range(int(gpu_number)):
                     gpu_info.append({'gpuUrn': 'auto'})
-                return True, gpu_info
+                return True,gpu_info
             else:
-                reason = 'Invalid flavor extra spec info:gpu_number is %s,' \
-                         ' gpu_specs is %s' % (gpu_number, gpu_specs)
+                reason = 'Invalid flavor extra spec info: gpu_number is %s, gpu_specs is %s' % (gpu_number, gpu_specs)
                 LOG.error(reason)
                 raise fc_exc.InvalidFlavorExtraSpecInfo(reason=reason)
-        return False, gpu_info
+        return False,gpu_info
 
     def get_vm_config(self):
         """get vm config info"""
@@ -304,26 +279,23 @@ class VmCreateBase(ops_task_base.OpsTaskBase):
             'properties': self.get_properties()
         }
 
-        (ret, gpu_info) = self.get_gpu_info()
+        (ret,gpu_info) = self.get_gpu_info()
         if ret:
             config['gpu'] = gpu_info
             config['memory']['reservation'] = config['memory']['quantityMB']
 
-        # reserve cdrom mount device for vm.
-        # The value None represent not reserve,
+        # reserve cdrom mount device for vm.The value None represent not reserve,
         # default is None for Uxy
         # default is xvdd for private cloud
-        if constant.CONF.fusioncompute.reserve_disk_symbol is not None and str(
-                constant.CONF.fusioncompute.reserve_disk_symbol).\
-                upper() == 'FALSE':
-            config['cdromSequenceNum'] = constant.CONF.fusioncompute. \
-                cdrom_sequence_num
+        if constant.CONF.fusioncompute.reserve_disk_symbol is not None \
+                and str(constant.CONF.fusioncompute.reserve_disk_symbol).upper() == 'FALSE':
+            config['cdromSequenceNum'] = constant.CONF.fusioncompute.cdrom_sequence_num
 
         return config
 
     def _get_inject_ip_flag(self, port_id):
-        """vnic_info:<port_uuid>":"enable_ip_inject:true|false"
-
+        """
+        "vnic_info:<port_uuid>":"enable_ip_inject:true|false"
         :param port_id:
         :return:
         """
@@ -335,10 +307,9 @@ class VmCreateBase(ops_task_base.OpsTaskBase):
                     if t.startswith('enable_ip_inject'):
                         flag_str = t.strip().split(':')[1]
                         flag_str = flag_str.lower()
-                        inject_ip_flag = (flag_str == 'true')
+                        inject_ip_flag = (flag_str=='true')
         except Exception as e:
             LOG.error("network param error: %s", vnic_info)
-            LOG.error("exception: %s", e)
         return inject_ip_flag
 
     def _get_vm_customization_nics(self):
@@ -370,7 +341,7 @@ class VmCreateBase(ops_task_base.OpsTaskBase):
                 gateway_ipv4 = subnet_ipv4_list[0]['gateway']['address']
 
                 cus_nic = {'sequenceNum': vif['sequence_num'] + 1,
-                           'ip': ip_ipv4 and ip_ipv4['address'] or '',
+                           'ip':  ip_ipv4 and ip_ipv4['address'] or '',
                            'gateway': gateway_ipv4,
                            'netmask': netmask_ipv4,
                            'ipVersion': constant.IPV4_VERSION,
@@ -382,7 +353,7 @@ class VmCreateBase(ops_task_base.OpsTaskBase):
         return cus_nics
 
     def _validate_customization(self, customization):
-        """_validate_customization
+        """
 
         :return:
         """
@@ -412,7 +383,7 @@ class VmCreateBase(ops_task_base.OpsTaskBase):
             return vm_custom_body
 
         inject_pwd_flag = self._metadata.get('__inject_pwd')
-        if inject_pwd_flag is False or inject_pwd_flag == 'False':
+        if inject_pwd_flag == False or inject_pwd_flag == 'False':
             vm_custom_body['isUpdateVmPassword'] = False
 
         if self.get_os_options()['osType'] == 'Other':
@@ -438,7 +409,7 @@ class VmCreateBase(ops_task_base.OpsTaskBase):
             return True
 
     def inject_files(self):
-        """inject_files
+        """
 
         :return:
         """
@@ -455,25 +426,23 @@ class VmCreateBase(ops_task_base.OpsTaskBase):
             LOG.debug(_('inject file %s succeed.') % path)
 
     def create_vm(self):
-        """create vm interface
-
+        """
+        create vm interface
         :return:
         """
         raise NotImplementedError()
 
-
 class VmCreateByImport(VmCreateBase):
-    """create vm use import vm interface
-
     """
-
+    create vm use import vm interface
+    """
     def get_protocol(self):
         """get nfs or null"""
         raise NotImplementedError()
 
     def create_vm(self):
-        """create vm by import interface
-
+        """
+        create vm by import interface
         :return:
         """
         self.post(self.site.import_vm_uri, data=self._vm_create_body,
@@ -489,42 +458,32 @@ class VmCreateByImport(VmCreateBase):
             return True
 
     def get_body_ext(self):
-        """import vm extend params
-
+        """
+        import vm extend params
         :return:
         """
         self._vm_create_body['protocol'] = self.get_protocol()
         if self._resource_group_urn:
-            self._vm_create_body['resourceGroup'] = self._resource_group_urn
+            self._vm_create_body['resourceGroup'] = self._resource_group_urn		
         if self._extra_specs:
             instance_vnic_type = self._extra_specs.get('instance_vnic:type')
             if instance_vnic_type and instance_vnic_type.lower() == 'enhanced':
-                instance_vnic_bandwidth = self._extra_specs.get(
-                    'instance_vnic:instance_bandwidth')
-                instance_vnic_max_count = self._extra_specs.get(
-                    'instance_vnic:max_count')
-                if instance_vnic_bandwidth is not None \
-                        and instance_vnic_max_count is not None:
-                    self._vm_create_body['bandwidth'] = int(
-                        instance_vnic_bandwidth)
-                    self._vm_create_body['maxVnic'] = int(
-                        instance_vnic_max_count)
+                instance_vnic_bandwidth = self._extra_specs.get('instance_vnic:instance_bandwidth')
+                instance_vnic_max_count = self._extra_specs.get('instance_vnic:max_count')
+                if instance_vnic_bandwidth is not None and instance_vnic_max_count is not None:
+                    self._vm_create_body['bandwidth'] = int(instance_vnic_bandwidth)
+                    self._vm_create_body['maxVnic'] = int(instance_vnic_max_count)
 
-            is_multi_disk_speedup = self._extra_specs.get(
-                'extra_spec:io:persistent_grant')
-            if is_multi_disk_speedup \
-                    and is_multi_disk_speedup.lower() == 'true':
-                self._vm_create_body[
-                    'isMultiDiskSpeedup'] = is_multi_disk_speedup
+            is_multi_disk_speedup = self._extra_specs.get('extra_spec:io:persistent_grant')
+            if is_multi_disk_speedup and is_multi_disk_speedup.lower() == 'true':
+                self._vm_create_body['isMultiDiskSpeedup'] = is_multi_disk_speedup
 
     def extend_ops_before_start(self):
-        """create with local disk, local disk should attach when vm stoped
-
+        """
+        create with local disk, local disk should attach when vm stoped
         :return:
         """
-        self._compute_ops.create_and_attach_local_disk_before_start(
-            self._instance, self._block_device_info)
-
+        self._compute_ops.create_and_attach_local_disk_before_start(self._instance, self._block_device_info)
 
 class VmCreateWithVolume(VmCreateByImport):
     """create vm with volume"""
@@ -548,8 +507,8 @@ class VmCreateWithVolume(VmCreateByImport):
             if disk['mount_device'] == self._root_device_name:
                 disk_info['sequenceNum'] = 1
             else:
-                disk_info['sequenceNum'] = self._compute_ops.get_sequence_num(
-                    disk['urn'], disk['mount_device'])
+                disk_info['sequenceNum'] = \
+                    self._compute_ops.get_sequence_num(disk['urn'], disk['mount_device'])
 
             disks_info.append(disk_info)
         return disks_info
@@ -557,12 +516,11 @@ class VmCreateWithVolume(VmCreateByImport):
     def get_os_options(self):
         """get vm os info"""
         if self._instance._task_state == 'rebuild_spawning':
-            # os_type = self.image_properties.get(constant.HUAWEI_OS_TYPE)
-            # os_version =
-            # self.image_properties.get(constant.HUAWEI_OS_VERSION)
-            # if os_type:
+            #os_type = self.image_properties.get(constant.HUAWEI_OS_TYPE)
+            #os_version = self.image_properties.get(constant.HUAWEI_OS_VERSION)
+            #if os_type:
             #    return self.get_fc_os_options(os_type, os_version)
-            # else:
+            #else:
             return super(VmCreateWithVolume, self).get_os_options()
 
         # get os Type from mata
@@ -578,7 +536,6 @@ class VmCreateWithVolume(VmCreateByImport):
 
         return super(VmCreateWithVolume, self).get_os_options()
 
-
 class VmCreateWithImage(VmCreateByImport):
     """create vm with image"""
 
@@ -589,14 +546,21 @@ class VmCreateWithImage(VmCreateByImport):
     def get_os_options(self):
         """get vm os info"""
 
-        # get os Type from mata
-        # os_type = self.image_properties.get(constant.HUAWEI_OS_TYPE)
-        # os_version = self.image_properties.
-        # get(constant.HUAWEI_OS_VERSION)
-        # if os_type:
-        #    return self.get_fc_os_options(os_type, os_version)
-        # else:
-        return super(VmCreateWithImage, self).get_os_options()
+        #get os Type from mata
+        if self.image_properties.obj_attr_is_set(constant.HUAWEI_OS_TYPE):
+            os_type = self.image_properties.get(constant.HUAWEI_OS_TYPE)
+        else:
+            os_type = "other"
+
+        if self.image_properties.obj_attr_is_set(constant.HUAWEI_OS_VERSION):
+            os_version = self.image_properties.get(constant.HUAWEI_OS_VERSION)
+        else:
+            os_version = "other"
+
+        if os_type:
+            return self.get_fc_os_options(os_type, os_version)
+        else:
+            return super(VmCreateWithImage, self).get_os_options()
 
     def _get_image_size(self):
         """get image size info"""
@@ -607,8 +571,8 @@ class VmCreateWithImage(VmCreateByImport):
             return 0
 
     def check_input(self):
-        """create vm image detail check
-
+        """
+        create vm image detail check
         :return:
         """
         super(VmCreateWithImage, self).check_input()
@@ -638,14 +602,12 @@ class VmCreateWithImage(VmCreateByImport):
         for disk in self._volume_ops.ensure_volume(self._block_device_info):
             user_disk_info = {
                 'volumeUrn': disk['urn'],
-                'sequenceNum': self._compute_ops.get_sequence_num(
-                    disk['urn'],
-                    disk['mount_device']),
-                'isThin': constant.FC_DRIVER_JOINT_CFG['volume_is_thin']}
+                'sequenceNum': self._compute_ops.get_sequence_num(disk['urn'], disk['mount_device']),
+                'isThin': constant.FC_DRIVER_JOINT_CFG['volume_is_thin']
+            }
             disks_info.append(user_disk_info)
 
         return disks_info
-
 
 class VmCreateWithNfsImage(VmCreateWithImage):
     """create vm with nfs image"""
@@ -659,34 +621,28 @@ class VmCreateWithNfsImage(VmCreateWithImage):
         return self.image_properties[constant.HUAWEI_IMAGE_LOCATION]
 
     def get_body_ext(self):
-        """create vm with image, extend url info
-
+        """
+        create vm with image, extend url info
         :return:
         """
         super(VmCreateWithNfsImage, self).get_body_ext()
         self._vm_create_body['url'] = self._get_template_url()
 
-
 class VmCreateWithUdsImage(VmCreateWithImage):
     """create vm with uds image"""
 
-    """create vm use import vm interface"""
-
+    """
+    create vm use import vm interface
+    """
     def __init__(self, fc_client, task_ops, instance):
-        super(
-            VmCreateWithUdsImage,
-            self).__init__(
-            fc_client,
-            task_ops,
-            instance)
+        super(VmCreateWithUdsImage, self).__init__(fc_client, task_ops, instance)
         self.usd_image_server_ip = None
         self.usd_image_port = None
         self.usd_image_bucket_name = None
         self.usd_image_key = None
 
     def _get_uds_image_info(self, image_location):
-        """_get_uds_image_info
-
+        """
         :param image_location: {ip}:{port}:{buket name}:{key}
         192.168.0.1:5443:region1.glance:001
         """
@@ -696,9 +652,9 @@ class VmCreateWithUdsImage(VmCreateWithImage):
             str_array = re.split(":", uds_image_info)
             if len(str_array) == 4:
                 return str_array[0], \
-                    str_array[1], \
-                    str_array[2], \
-                    str_array[3]
+                       str_array[1], \
+                       str_array[2], \
+                       str_array[3]
         reason = _("Invalid uds image info,invalid image_location!")
         raise fc_exc.InvalidUdsImageInfo(reason=reason)
 
@@ -709,11 +665,11 @@ class VmCreateWithUdsImage(VmCreateWithImage):
         if properties:
             try:
                 self.usd_image_server_ip,  \
-                    self.usd_image_port, \
-                    self.usd_image_bucket_name, \
-                    self.usd_image_key = \
-                    self._get_uds_image_info(
-                        properties.get(constant.HUAWEI_IMAGE_LOCATION))
+                self.usd_image_port, \
+                self.usd_image_bucket_name, \
+                self.usd_image_key = \
+                    self._get_uds_image_info\
+                        (properties.get(constant.HUAWEI_IMAGE_LOCATION))
             except Exception:
                 reason = _("Invalid uds image info,invalid loaction!")
                 raise fc_exc.InvalidUdsImageInfo(reason=reason)
@@ -728,8 +684,7 @@ class VmCreateWithUdsImage(VmCreateWithImage):
         return "uds"
 
     def get_body_ext(self):
-        """get_body_ext
-
+        """
         create vm with image, extend uds info
         :return:
         """
@@ -743,7 +698,6 @@ class VmCreateWithUdsImage(VmCreateWithImage):
             'key': self.usd_image_key
         }
 
-
 class VmCreateWithGlanceImage(VmCreateWithImage):
     """create vm with glance image"""
 
@@ -755,8 +709,7 @@ class VmCreateWithGlanceImage(VmCreateWithImage):
             raise fc_exc.InvalidGlanceImageInfo(reason=reason)
 
     def get_body_ext(self):
-        """get_body_ext
-
+        """
         create vm with image, extend glance info
         :return:
         """
@@ -769,19 +722,17 @@ class VmCreateWithGlanceImage(VmCreateWithImage):
             'imageID': self._image_meta.id
         }
 
-
 class VmCreateByClone(VmCreateBase):
-    """create vm use import vm interface
-
     """
-
+    create vm use import vm interface
+    """
     def __init__(self, fc_client, task_ops, instance):
         super(VmCreateByClone, self).__init__(fc_client, task_ops, instance)
         self._need_attach_user_vols = False
         self._cloned_source_vm_or_tpl = None
 
     def is_auto_boot(self):
-        """is_auto_boot
+        """
 
         :return:
         """
@@ -795,16 +746,15 @@ class VmCreateByClone(VmCreateBase):
         """get vm os info"""
 
         # get os Type from mata
-        # os_type = self.image_properties.get(constant.HUAWEI_OS_TYPE)
-        # os_version = self.image_properties.get(constant.HUAWEI_OS_VERSION)
-        # if os_type:
+        #os_type = self.image_properties.get(constant.HUAWEI_OS_TYPE)
+        #os_version = self.image_properties.get(constant.HUAWEI_OS_VERSION)
+        #if os_type:
         #    return self.get_fc_os_options(os_type, os_version)
-        # else:
+        #else:
         return super(VmCreateByClone, self).get_os_options()
 
     def get_disks_info(self):
-        """get_disks_info
-
+        """
         FC itself will clone disks belonging to this tpl/vm(it should and
         must has only one sys volume).
         """
@@ -823,24 +773,25 @@ class VmCreateByClone(VmCreateBase):
         return disks_info
 
     def get_body_ext(self):
-        """if body not enough, child class can extend
-
+        """
+        if body not enough, child class can extend
         :return:
         """
-        if "uuid" in self._vm_create_body:
+        if self._vm_create_body.has_key("uuid"):
             self._vm_create_body.pop("uuid")
         self._vm_create_body["clonedVmUUID"] = self._instance['uuid']
 
-    def extend_ops_before_start(self):
-        """create by clone, user vol should attach when vm stoped
 
+    def extend_ops_before_start(self):
+        """
+        create by clone, user vol should attach when vm stoped
         :return:
         """
         if self._need_attach_user_vols:
             self._attach_user_vols()
 
     def _attach_user_vols(self):
-        """_attach_user_vols
+        """
 
         :return:
         """
@@ -848,9 +799,9 @@ class VmCreateByClone(VmCreateBase):
         for disk in self._volume_ops.ensure_volume(self._block_device_info):
             body = {
                 'volUrn': disk['urn'],
-                'sequenceNum': self._compute_ops.get_sequence_num(
-                    disk['urn'],
-                    disk['mount_device'])}
+                'sequenceNum':
+                    self._compute_ops.get_sequence_num(disk['urn'], disk['mount_device'])
+            }
             LOG.debug(_("begin attach user vol: %s"), disk['urn'])
             self._volume_ops.attach_volume(fc_vm, vol_config=body)
 
@@ -858,7 +809,6 @@ class VmCreateByClone(VmCreateBase):
         self.post(self._cloned_source_vm_or_tpl.get_vm_action_uri('clone'),
                   data=self._vm_create_body,
                   excp=fc_exc.InstanceCloneFailure)
-
 
 class VmCreateWithTemplate(VmCreateByClone):
     """create vm with image"""
@@ -878,8 +828,8 @@ class VmCreateWithTemplate(VmCreateByClone):
                 raise fc_exc.InstanceCloneFailure
 
     def get_body_ext(self):
-        """if body not enough, child class can extend
-
+        """
+        if body not enough, child class can extend
         :return:
         """
         super(VmCreateWithTemplate, self).get_body_ext()
@@ -890,8 +840,7 @@ class VmCreateWithTemplate(VmCreateByClone):
             self._vm_create_body['isLinkClone'] = is_link_clone
 
     def _get_vm_by_template_url(self, template_url):
-        """_get_vm_by_template_url
-
+        """
         :param template_url: {vrm site id}:{vm id}
         239d8a8e:i-00000061
         """
@@ -908,7 +857,7 @@ class VmCreateWithTemplate(VmCreateByClone):
         return None
 
     def _validate_template(self, instance):
-        """_validate_template
+        """
 
         :param instance: fc vm
         :return:
@@ -919,7 +868,6 @@ class VmCreateWithTemplate(VmCreateByClone):
         for disk in instance['vmConfig']['disks']:
             if disk['sequenceNum'] not in [0, 1]:
                 raise fc_exc.InstanceCloneFailure
-
 
 def get_vm_create(fc_client, task_ops, instance, image_meta=None):
     """get create vm object"""
