@@ -1,0 +1,8 @@
+Code-Review+2: jinke <jiajinke@huawei.com>
+Workflow+1: jinke <jiajinke@huawei.com>
+Verified+2: Zuul
+Submitted-by: Zuul
+Submitted-at: Wed, 29 Nov 2017 02:45:24 +0000
+Reviewed-on: https://review.openstack.org/518437
+Project: openstack/nova-fusioncompute
+Branch: refs/heads/master
