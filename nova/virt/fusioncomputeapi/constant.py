@@ -198,7 +198,7 @@ class ConfigItemValue(object):
         self.value = value
         self.conf_type = conf_type
         if conf_type is None:
-            raise TypeError('item %s set value %s type eror.' % (key, value))
+            raise TypeError('item %s set value %s type error.' % (key, value))
 
     def set_value(self, value):
         """set item value basis by type
